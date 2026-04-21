@@ -51,12 +51,34 @@ class Connector:
         except OperationalError as e:
             print(e)
     
+    def validate_infos(self):
+        # name validation
+        allowed_table = self.table_infos['table_name']
+        if not allowed_table.isidentifier():
+            raise ValueError(f"Invalid table name: {allowed_table}")
+
+        # columns validation
+        columns = []
+        for name, _type in self.table_infos['columns']:
+            if not name.isidentifier():
+                raise ValueError(f"Invalid column name: {name}")
+            columns.append(f"{name} {_type}")
+
+        # primary keys validation
+        keys = []
+        for key in self.table_infos['primary_keys']:
+            if not key.isidentifier():
+                raise ValueError(f"Invalid primary key name: {name}")
+            keys.append(key)
+        
+        return allowed_table, columns, keys
+    
     def create_query(self):
-        columns = [f'{name} {_type}' for name, _type in self.table_infos['columns']]
+        allowed_table, columns, keys = self.validate_infos()
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self.table_infos['table_name']}(
+        CREATE TABLE IF NOT EXISTS {allowed_table}(
             {', '.join(columns)},
-            PRIMARY KEY ({', '.join(self.table_infos['primary_keys'])})
+            PRIMARY KEY ({', '.join(keys)})
         )
         """
         return query
