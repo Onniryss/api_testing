@@ -1,6 +1,12 @@
-from sqlite3 import connect, OperationalError
+import sqlite3
 
 class Connector:
+    TYPE_MAPPING = {
+        "INTEGER": int,
+        "REAL": float,
+        "TEXT": str
+    }
+    
     default_table_infos = {
         "table_name" : "records",
         "columns" : [
@@ -38,18 +44,22 @@ class Connector:
         ]
     }
     
-    def __init__(self, db_name = "db.sqlite3", table_infos : dict = None):
+    def __init__(self, connection = sqlite3.connect, db_name = "db.sqlite3", table_infos : dict = None):
+        self.connection = connection
         self.db_name = db_name
         self.table_infos = table_infos or Connector.default_table_infos
+        self.column_types = {name: self.TYPE_MAPPING.get(dtype, str) 
+                             for name, dtype in self.table_infos["columns"]}
         creation_query = self.create_query()
         
         try:
-            with connect(self.db_name) as conn:
+            with self.connection(self.db_name) as conn:
                 cursor = conn.cursor()
                 
                 cursor.execute(creation_query)
-        except OperationalError as e:
+        except Exception as e:
             print(e)
+    
     
     def validate_infos(self):
         # name validation
@@ -73,15 +83,53 @@ class Connector:
         
         return allowed_table, columns, keys
     
+    
     def create_query(self):
-        allowed_table, columns, keys = self.validate_infos()
+        table_name, columns, keys = self.validate_infos()
         query = f"""
-        CREATE TABLE IF NOT EXISTS {allowed_table}(
+        CREATE TABLE IF NOT EXISTS {table_name}(
             {', '.join(columns)},
             PRIMARY KEY ({', '.join(keys)})
         )
         """
         return query
+
+
+    def insert_row(self, row : dict):
+        table_name = self.table_infos['table_name']
+        validated_values = []
+        
+        try:
+            for col_name, value in row.items():
+                if col_name not in self.column_types:
+                    raise ValueError(f"La colonne '{col_name}' n'existe pas dans la config.")
+                
+                if value is None or value == '':
+                    validated_values.append(None)
+                    continue
+                
+                target_type = self.column_types[col_name]
+                try:
+                    clean_value = target_type(value)
+                    validated_values.append(clean_value)
+                except (ValueError, TypeError):
+                    raise TypeError(f"Type incorrect pour '{col_name}': reçu '{value}', attendu {target_type.__name__}")
+
+            placeholders = ", ".join(["?"] * len(row))
+            columns = ", ".join(row.keys())
+            query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+            
+            with self.connection(self.db_name) as conn:
+                conn.execute(query, validated_values)
+                conn.commit()
+
+        except Exception as e:
+            print(f"Erreur d'insertion : {e}")
+
+
+    def insert_rows(self, rows : list[dict]):
+        for row in rows:
+            self.insert_row(row)
     
     
 if __name__=="__main__":
