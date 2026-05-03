@@ -1,4 +1,4 @@
-import sqlite3
+from sqlite3 import connect
 from protocols import DBConnector
 
 class SqliteConnector(DBConnector):
@@ -46,22 +46,21 @@ class SqliteConnector(DBConnector):
     }
     
     
-    def __init__(self, connection = sqlite3.connect, db_name = "db.sqlite3", table_infos : dict = None):
-        self.connection = connection
+    def __init__(self, db_name : str = "db.sqlite3", table_infos : dict = None) -> None:
         self.db_name = db_name
         self.table_infos = table_infos or SqliteConnector.default_table_infos
         self.column_types = {name: self.TYPE_MAPPING.get(dtype, str) 
                              for name, dtype in self.table_infos["columns"]}
 
-    def setup(self):
+    def setup(self) -> None:
         creation_query = self.create_query()
-        with self.connection(self.db_name) as conn:
+        with connect(self.db_name) as conn:
             cursor = conn.cursor()
             
             cursor.execute(creation_query)
 
 
-    def validate_infos(self):
+    def validate_infos(self) -> tuple[str, list[str], list[str]]:
         # name validation
         allowed_table = self.table_infos['table_name']
         if not allowed_table.isidentifier():
@@ -84,7 +83,7 @@ class SqliteConnector(DBConnector):
         return allowed_table, columns, keys
     
     
-    def create_query(self):
+    def create_query(self) -> str:
         table_name, columns, keys = self.validate_infos()
         query = f"""
         CREATE TABLE IF NOT EXISTS {table_name}(
@@ -95,10 +94,10 @@ class SqliteConnector(DBConnector):
         return query
 
 
-    def insert_rows(self, rows : list[dict]):
+    def insert_rows(self, rows : list[dict]) -> None:
         table_name = self.table_infos['table_name']
         
-        with self.connection(self.db_name) as conn:
+        with connect(self.db_name) as conn:
             for row in rows:
                 validated_values = []
                 
