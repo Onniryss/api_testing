@@ -50,17 +50,15 @@ class Connector:
         self.table_infos = table_infos or Connector.default_table_infos
         self.column_types = {name: self.TYPE_MAPPING.get(dtype, str) 
                              for name, dtype in self.table_infos["columns"]}
+
+    def setup(self):
         creation_query = self.create_query()
-        
-        try:
-            with self.connection(self.db_name) as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute(creation_query)
-        except Exception as e:
-            print(e)
-    
-    
+        with self.connection(self.db_name) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute(creation_query)
+
+
     def validate_infos(self):
         # name validation
         allowed_table = self.table_infos['table_name']
@@ -78,7 +76,7 @@ class Connector:
         keys = []
         for key in self.table_infos['primary_keys']:
             if not key.isidentifier():
-                raise ValueError(f"Invalid primary key name: {name}")
+                raise ValueError(f"Invalid primary key name: {key}")
             keys.append(key)
         
         return allowed_table, columns, keys
@@ -95,42 +93,36 @@ class Connector:
         return query
 
 
-    def insert_row(self, row : dict):
+    def insert_rows(self, rows : list[dict]):
         table_name = self.table_infos['table_name']
-        validated_values = []
         
-        try:
-            for col_name, value in row.items():
-                if col_name not in self.column_types:
-                    raise ValueError(f"La colonne '{col_name}' n'existe pas dans la config.")
+        with self.connection(self.db_name) as conn:
+            for row in rows:
+                validated_values = []
                 
-                if value is None or value == '':
-                    validated_values.append(None)
-                    continue
-                
-                target_type = self.column_types[col_name]
-                try:
-                    clean_value = target_type(value)
-                    validated_values.append(clean_value)
-                except (ValueError, TypeError):
-                    raise TypeError(f"Type incorrect pour '{col_name}': reçu '{value}', attendu {target_type.__name__}")
+                for col_name, value in row.items():
+                    if col_name not in self.column_types:
+                        raise ValueError(f"La colonne '{col_name}' n'existe pas dans la config.")
+                    
+                    if value is None or value == '':
+                        validated_values.append(None)
+                        continue
+                    
+                    target_type = self.column_types[col_name]
+                    try:
+                        clean_value = target_type(value)
+                        validated_values.append(clean_value)
+                    except (ValueError, TypeError):
+                        raise TypeError(f"Type incorrect pour '{col_name}': reçu '{value}', attendu {target_type.__name__}")
 
-            placeholders = ", ".join(["?"] * len(row))
-            columns = ", ".join(row.keys())
-            query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
-            
-            with self.connection(self.db_name) as conn:
-                conn.execute(query, validated_values)
+                placeholders = ", ".join(["?"] * len(row))
+                columns = ", ".join(row.keys())
+                query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+                
+                cursor = conn.cursor()
+                cursor.execute(query, validated_values)
                 conn.commit()
 
-        except Exception as e:
-            print(f"Erreur d'insertion : {e}")
-
-
-    def insert_rows(self, rows : list[dict]):
-        for row in rows:
-            self.insert_row(row)
-    
     
 if __name__=="__main__":
     connector = Connector()
