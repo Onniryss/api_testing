@@ -1,0 +1,2 @@
+class ResponseNotOkException(Exception):
+    pass

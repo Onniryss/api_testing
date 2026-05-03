@@ -2,6 +2,7 @@ import requests
 from dotenv import load_dotenv
 import os
 from connector import Connector
+from exceptions import ResponseNotOkException
 
 load_dotenv()
 
@@ -21,22 +22,31 @@ class APIClient:
     def construct_url(self, station_id, date_start, date_end):
         return f"{self._api_url}&token={self._api_token}&stations[]={station_id}&start={date_start}&end={date_end}"
 
-    def save_to_db(self, data):
+
+    def parse_response(self, data):
+        station_list = []
         if stations := data.get("hourly"):
             for key in stations.keys():
                 if key != "_params":
-                    self.db_connector.insert_rows(stations[key])
+                    station_list.append(stations[key])
+        
+        return station_list
+
+    def save_to_db(self, data):
+        station_list = self.parse_response(data)
+        for station_data in station_list:
+            self.db_connector.insert_rows(station_data)
 
     def request(self, station_id, date_start, date_end):
         request_url = self.construct_url(station_id, date_start, date_end)
         response = self._api_client.get(request_url)
-        data_json = response.json()
+        if response.ok:
+            return response.json()
         
-        self.save_to_db(data_json)
-        
-        return request_url
+        raise ResponseNotOkException("Request response is not OK")
 
 if __name__=="__main__":
     connector = Connector()
     client = APIClient(connector)
-    print(client.request("07240", "2026-04-18", "2026-04-20"))
+    data_json = client.request("07240", "2026-04-18", "2026-04-20")
+    client.save_to_db(data_json)
