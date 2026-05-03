@@ -1,9 +1,17 @@
 from typing import Protocol, runtime_checkable
-from requests import Response
+
+@runtime_checkable
+class APIResponse(Protocol):
+    @property
+    def ok(self):
+        pass
+    
+    def json(self) -> dict:
+        pass
 
 @runtime_checkable
 class APIRequester(Protocol):
-    def get(self, url : str) -> Response:
+    def get(self, url : str) -> APIResponse:
         pass
 
 @runtime_checkable
