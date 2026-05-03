@@ -7,7 +7,7 @@ class FakeConnector(DBConnector):
         self.data = []
         
     def setup(self) -> None:
-        pass
+        self.data = []
     
     def insert_rows(self, rows : list[dict]) -> None:
         self.data.extend(rows)
