@@ -19,8 +19,5 @@ class FakeCursor:
     def __init__(self):
         pass
     
-    def execute(self, query):
-        pass
-    
-    def execute(self, query, values):
+    def execute(self, query, values = None):
         pass

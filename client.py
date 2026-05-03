@@ -1,21 +1,22 @@
 import requests
 from dotenv import load_dotenv
 import os
-from connector import Connector
+from connector import SqliteConnector
 from exceptions import ResponseNotOkException
+from protocols import APIRequester, DBConnector
 
 load_dotenv()
 
 class APIClient:
     def __init__(
         self, 
-        db_connector : Connector,
-        api_client = requests, 
+        db_connector : DBConnector,
+        api_requester : APIRequester = requests, 
         api_url : str = None, 
         api_token : str = None,
     ):
         self.db_connector = db_connector
-        self._api_client = api_client
+        self._api_requester = api_requester
         self._api_url = api_url or os.environ.get("API_URL")
         self._api_token = api_token or os.environ.get("API_KEY")
 
@@ -39,14 +40,15 @@ class APIClient:
 
     def request(self, station_id, date_start, date_end):
         request_url = self.construct_url(station_id, date_start, date_end)
-        response = self._api_client.get(request_url)
+        response = self._api_requester.get(request_url)
         if response.ok:
             return response.json()
         
-        raise ResponseNotOkException("Request response is not OK")
+        raise ResponseNotOkException(str(response))
 
 if __name__=="__main__":
-    connector = Connector()
+    connector = SqliteConnector()
+    connector.setup()
     client = APIClient(connector)
     data_json = client.request("07240", "2026-04-18", "2026-04-20")
     client.save_to_db(data_json)

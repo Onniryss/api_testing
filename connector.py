@@ -1,6 +1,7 @@
 import sqlite3
+from protocols import DBConnector
 
-class Connector:
+class SqliteConnector(DBConnector):
     TYPE_MAPPING = {
         "INTEGER": int,
         "REAL": float,
@@ -44,10 +45,11 @@ class Connector:
         ]
     }
     
+    
     def __init__(self, connection = sqlite3.connect, db_name = "db.sqlite3", table_infos : dict = None):
         self.connection = connection
         self.db_name = db_name
-        self.table_infos = table_infos or Connector.default_table_infos
+        self.table_infos = table_infos or SqliteConnector.default_table_infos
         self.column_types = {name: self.TYPE_MAPPING.get(dtype, str) 
                              for name, dtype in self.table_infos["columns"]}
 
@@ -117,12 +119,8 @@ class Connector:
 
                 placeholders = ", ".join(["?"] * len(row))
                 columns = ", ".join(row.keys())
-                query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+                query = f"INSERT OR REPLACE INTO {table_name} ({columns}) VALUES ({placeholders})"
                 
                 cursor = conn.cursor()
                 cursor.execute(query, validated_values)
                 conn.commit()
-
-    
-if __name__=="__main__":
-    connector = Connector()
