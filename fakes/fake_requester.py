@@ -8,7 +8,7 @@ class FakeResponse(APIResponse):
     
     @property
     def ok(self) -> bool:
-        if self.status // 100 == 2:
+        if self.status // 100 in [2, 3]:
             return True
 
         return False

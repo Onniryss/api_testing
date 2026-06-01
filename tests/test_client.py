@@ -1,5 +1,5 @@
 from fakes.fake_connector import FakeConnector
-from fakes.fake_requester import FakeRequester, FakeResponse
+from fakes.fake_requester import FakeRequester
 from client import APIClient
 from connector import SqliteConnector
 from exceptions import ResponseNotOkException

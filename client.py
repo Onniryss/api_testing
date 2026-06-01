@@ -1,7 +1,6 @@
 import requests
 from dotenv import load_dotenv
 import os
-from connector import SqliteConnector
 from exceptions import ResponseNotOkException
 from protocols import APIRequester, DBConnector
 
