@@ -46,12 +46,7 @@ class APIClient:
         if response.ok:
             return response.json()
         
+        print(request_url)
         raise ResponseNotOkException(str(response))
 
 
-# if __name__=="__main__":
-#     connector = SqliteConnector()
-#     connector.setup()
-#     client = APIClient(connector)
-#     data_json = client.request("07240", "2026-04-18", "2026-04-20")
-#     client.save_to_db(data_json)

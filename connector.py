@@ -11,7 +11,7 @@ class SqliteConnector(DBConnector):
     default_table_infos = {
         "table_name" : "records",
         "columns" : [
-            ("id_station", "INTEGER"),
+            ("id_station", "TEXT"),
             ("dh_utc", "TEXT"),
             ("temperature", "REAL"),
             ("pression", "REAL"), 
@@ -30,6 +30,11 @@ class SqliteConnector(DBConnector):
             ("pluie_6h", "REAL"), 
             ("pluie_12h", "REAL"), 
             ("pluie_24h", "REAL"), 
+            ("pluie_cumul_0h", "REAL"),
+            ("pluie_intensite", "REAL"),
+            ("pluie_intensite_max_1h", "REAL"),
+            ("uv", "REAL"),
+            ("uv_index", "REAL"),
             ("ensoleillement", "REAL"), 
             ("temperature_sol", "REAL"), 
             ("temps_omm", "REAL"), 
@@ -38,6 +43,7 @@ class SqliteConnector(DBConnector):
             ("neige_au_sol", "REAL"), 
             ("nebulosite", "REAL"), 
             ("raw_msg", "TEXT"),
+            ("complements", "TEXT"),
         ],
         "primary_keys" : [
             "id_station",
