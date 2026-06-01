@@ -78,6 +78,8 @@ class SqliteConnector(DBConnector):
         for key in self.table_infos['primary_keys']:
             if not key.isidentifier():
                 raise ValueError(f"Invalid primary key name: {key}")
+            if key not in [column_name for column_name, _ in self.table_infos['columns']]:
+                raise ValueError(f"Primary key not in the given columns : {key}")
             keys.append(key)
         
         return allowed_table, columns, keys
